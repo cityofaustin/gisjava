@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+
+
+<link rel="stylesheet" href="https://js.arcgis.com/4.0beta3/esri/css/main.css">
+<script src="https://js.arcgis.com/4.0beta3/"></script>
+
+<style>
+html,
+body {
+  padding: 2;
+  margin: 2;
+}
+p {
+    font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
+<script>
+require([
+    "esri/Map",
+    "esri/views/SceneView",
+    "esri/layers/FeatureLayer",
+    "esri/geometry/SpatialReference",
+    "esri/geometry/Point",
+    "esri/Camera",
+    "esri/PopupTemplate",
+    "esri/renderers/SimpleRenderer",
+    "esri/symbols/ExtrudeSymbol3DLayer",
+    "esri/symbols/PolygonSymbol3D",
+    "dojo/domReady!"
+  ],
+  function(
+    Map, SceneView, FeatureLayer, SpatialReference, Point, Camera, PopupTemplate, SimpleRenderer, ExtrudeSymbol3DLayer, PolygonSymbol3D
+  ) {
+    
+    var initCam = new Camera({
+      position: new Point({
+        x: -10881000.194799,
+        y: 3536000.799502,
+        z: 400,
+        spatialReference: new SpatialReference({ wkid: 3857 })
+      }),
+      heading: 360,
+      tilt: 80
+    });
+    
+    var renderer = new SimpleRenderer({
+      symbol: new PolygonSymbol3D({
+        symbolLayers: [new ExtrudeSymbol3DLayer({
+          material: { color: "orange" }
+        })]
+      }),
+      visualVariables: [
+      {
+        type: "sizeInfo",
+        field: "MAX_HEIGHT",
+        valueUnit: "feet"  //converts and extrudes all data values in feet
+      }, {
+        type: "colorInfo",
+        field: "MAX_HEIGHT",
+        colors: ["#fff7ec", "orange"],
+        minDataValue: 50,
+        maxDataValue: 500
+      }, {
+        type: "opacityInfo",
+        opacityValues : [ 0.75 ]
+      }
+      ]
+    });
+    var buildingsLyr = new FeatureLayer({
+      url: "http://services.arcgis.com/0L95CJ0VTaxqcmED/ArcGIS/rest/services/STRUCTURE_building_footprints_2013/FeatureServer/0",
+      renderer: renderer,
+      popupTemplate: new PopupTemplate({
+        content: "{*}"
+      }),
+      outFields: ["*"],
+      definitionExpression: "MAX_HEIGHT > 50",
+      elevationInfo: {
+        mode: "onTheGround"
+      }
+    });
+    var map = new Map({
+      basemap: "satellite"
+    });
+    map.add(buildingsLyr);
+    var view = new SceneView({
+      container: "viewDiv",
+      map: map,
+      camera: initCam
+    });
+  });
+</script>
+</head>
+
+<body>
+<title>Demonstration of Austin area Building Footprints Extruded</title>
+
+<p>This viewer uses <a href="https://developers.arcgis.com/javascript/beta/">ESRI ArcGIS API for JavaScript Beta</a> code to "extrude" building footprints, 
+and is for demonstration only.  Click on the view if the buildings appear to be floating off the ground.  Hold down the right mouse button to tilt
+and move around in the display.  Refresh the web page if you need to return to the beginning view.  Slower video cards and internet connections may affect performance.  </p>
+
+<p>This viewer exagerrates building forms, so it should not be used to make determinations.  For example, the Texas Capitol is shown as one uniformly tall building.
+Buildings on sloping ground will appear to have sloping rooftops.  It also only shows buildings 40 Feet or higher.  Bridges will appear sunken because the aerial image is overlayed on ground height.</p>
+
+<div id="viewDiv"></div>
+
+
+</body>
+
+</html>
