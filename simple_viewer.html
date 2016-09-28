@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://js.arcgis.com/3.17/esri/css/esri.css">
+<script src="https://js.arcgis.com/3.17/"></script>
+    
+<style>
+  html, body, #map{
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  #info{
+    top: 0px;
+    right: 0px;
+    position: absolute;
+    z-index: 99;
+    opacity: 0.9;
+    background-color: whitesmoke;
+    border-bottom-left-radius: 8px;
+    padding: 0px 0px 0px 10px;
+  }
+</style>
+
+<script>
+require([
+  "esri/map",
+  "esri/Color",
+  "esri/layers/FeatureLayer",
+  "esri/renderers/UniqueValueRenderer",
+  "esri/symbols/SimpleLineSymbol",
+  "esri/dijit/PopupTemplate",
+  "esri/dijit/Legend",
+  "dojo/domReady!"
+], function(
+  Map, Color,
+  FeatureLayer,
+  UniqueValueRenderer,
+  SimpleLineSymbol,
+  PopupTemplate,
+  Legend
+) {
+
+  var map = new Map("map", {
+    basemap: "gray",
+    center: [ -97.7431, 30.2672 ],
+    zoom: 15
+  });
+      
+  
+
+ /******************************************************
+  * The PopupTemplate can be used to override the
+  * field name or default field alias for fields 
+  * in the legend. Without the 'label' property in 
+  * each fieldInfo object below, the fields in the 
+  * legend would read "DISTRICT" and "AADT" respectivly.
+  * 
+  * Adding a label in the PopupTemplate allows you 
+  * to format and re-write the titles for each field 
+  * so they're more descriptive
+  *****************************************************/
+  var template = new PopupTemplate({
+    title: "District {ROAD_CLASS}",
+    description: "{*}",
+    fieldInfos: [{
+      fieldName: "ROAD_CLASS",
+      label: "Transportation District",
+      format: { places: 0, digitSeparator: true }  
+    }, {
+      fieldName: "FULL_STREET_NAME",
+      label: "Annual Average Daily Traffic",
+      format: { places: 0, digitSeparator: true }  
+    }]
+  });      
+
+  var url = "http://services.arcgis.com/0L95CJ0VTaxqcmED/ArcGIS/rest/services/TRANSPORTATION_street_segment/FeatureServer/0";
+  var layer = new FeatureLayer(url, {
+    mode: FeatureLayer.MODE_AUTO,
+    outFields: "*",
+    infoTemplate: template  //Apply the PopupTemplate to the layer
+  });
+
+  //Create a unique value renderer and its unique value info
+  var renderer = new UniqueValueRenderer(null, "ROAD_CLASS");
+    
+  //This function will be used to create symbols for each unique value    
+  function createSymbol (color) {
+    return new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color(color), 1.5);
+  }
+  
+  /*****************************************************************
+  * The addValue() method allows you to pass an object 
+  * as a method parameter. The 'value' and 'symbol' properties
+  * are required to properly render the data. By default,
+  * the value of the 'value' property is used in the legend
+  * to identify the symbols. However, you may use the 'label'
+  * property to customize the text in the legend identifying 
+  * each symbol. This allows for creating more visually appealing 
+  * and informative legends.
+  ******************************************************************/
+  renderer.addValue({
+    value: "6",
+    symbol: createSymbol("red"),
+    width: 22,
+    label: "Local Streets",
+    description: "Local Streets"
+  });
+
+
+  //Set the renderer on the layer and add the layer to the map    
+  layer.setRenderer(renderer);
+  map.addLayer(layer)
+
+  /****************************************************************
+   * Add feature layer - A FeatureLayer at minimum should point
+   * to a URL to a feature service or point to a feature collection 
+   * object.
+   ***************************************************************/
+
+  var jurislyr = new FeatureLayer("http://services.arcgis.com/0L95CJ0VTaxqcmED/ArcGIS/rest/services/BOUNDARIES_jurisdictions/FeatureServer/0",{
+   opacity: 0.3                       
+  });
+  var lotlyr = new FeatureLayer("http://services.arcgis.com/0L95CJ0VTaxqcmED/ArcGIS/rest/services/PLANNINGCADASTRE_land_base_lot_line/FeatureServer/0",{
+   name: "Base Lot Lines",
+   opacity: .5,
+   minScale: 0,
+   maxScale: 0,
+  });
+  map.addLayers([jurislyr, lotlyr]);
+  /*************************************************************
+  * The legend requires minimal code. All you need here is 
+  * a reference to the layer(s) to display in the legend and a 
+  * title. The symbols and their labels will automatically be 
+  * taken from the renderer as you defined them earlier.
+  **************************************************************/
+    
+  map.on("load", function(evt){
+    var legend = new Legend({
+      map: map,
+      layerInfos: [{
+        layer: layer,
+        title: "Street Classification"
+      }, {
+        layer: jurislyr,
+        title: "Austin Jurisdictions"
+      }, {
+        layer: lotlyr,
+        title: "Base Lot Lines"
+      }]
+     }, "legendDiv");
+    
+    legend.startup(); 
+  });
+});
+</script>
+</head>
+<body>
+<title>Local Streets and Jurisdiction (beta)</title>
+
+<p>This product is for informational purposes and may not have been prepared for or be suitable for legal, engineering, or surveying purposes. It does not represent an on-the-ground survey and represents only the approximate relative location of property boundaries.
+This product has been produced by the Development Services Department for the sole purpose of geographic reference. No warranty is made by the City of Austin regarding specific accuracy or completeness.
+</p>
+
+<div id="map"></div>
+
+<div id="info"><div id="legendDiv"></div></div>
+
+</body>
+</html>
