@@ -54,7 +54,7 @@
 
         var zoningmap = new FeatureLayer("http://services.arcgis.com/0L95CJ0VTaxqcmED/ArcGIS/rest/services/ZoningAnalysisFS/FeatureServer/0", {
           mode: FeatureLayer.MODE_SNAPSHOT,
-          setMaxAllowableOffset:(.25),
+          setMaxAllowableOffset:(1),
           outFields: ["", "BASE_ZONE_CATEGORY", "ACRES"]
         });
 
